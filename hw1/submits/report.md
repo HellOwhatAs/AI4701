@@ -9,6 +9,14 @@
    |![](./透视投影.jpg)|![](./正交投影.jpg)|
 
 3. **推导Fig. 1.5中从三维世界坐标系到图像平面的投影方程，要求详细步骤，而不是仅给出结果。**
+   根据几何关系可以得到以下关系：
+   $$
+   \begin{aligned}
+       &(x-x_0) = \alpha X\\
+       &(y - y_0) = \alpha\left(Z\sin(\theta) + Y\cos(\frac{\pi}{2} - \theta)\right)
+   \end{aligned}
+   $$
+   通过化简可得到最终结果如下：
    $$
    \begin{aligned}
        &(x-x_0) = \alpha X\\
@@ -22,7 +30,13 @@
    $$
 
 4. **仿照关于Y的约束推导，写出关于Z的约束方程。**
-   ...
+   $$
+	\begin{aligned}
+      \frac{\partial^2 Z}{\partial x^2} &= 0 \\
+      \frac{\partial^2 Z}{\partial y^2} &= 0 \\
+      \frac{\partial^2 Z}{\partial x \partial y} &= 0
+   \end{aligned}
+   $$
 
 5. **补写出附件代码（simpleworldY.m）中的缺失梯度核（166，180行），运行并给出结果。提交完整代码和运行结果图。**
    完整代码 "sparseMatrix.m"， "simpleworldY.m"，以及运行结果图 "运行结果图.png" 和报告一同提交。
