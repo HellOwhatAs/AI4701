@@ -31,6 +31,7 @@
 
 4. **仿照关于Y的约束推导，写出关于Z的约束方程。**
    $$
+   \frac{\partial Z}{\partial y} = - \frac{1}{\sin\theta} \\
 	\begin{aligned}
       \frac{\partial^2 Z}{\partial x^2} &= 0 \\
       \frac{\partial^2 Z}{\partial y^2} &= 0 \\
