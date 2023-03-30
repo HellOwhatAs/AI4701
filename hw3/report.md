@@ -49,4 +49,26 @@
 
    从以上结果中可以看出，当阈值参数过小时，会检测出过多的线。而当阈值过大时，又存在不够敏感的情况。
 
-5. ...
+5. 编写如下的 [python](https://www.python.org/) 代码，读取图像，进行特定方向上的线拟合，并根据拟合结果在原始图像上添加删除线，保存为另一幅图片。
+   ```py
+   import cv2
+   import numpy as np
+   from itertools import groupby
+   
+   img = cv2.imread("./text.png")
+   thresh = cv2.threshold(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+   
+   for val, elems in groupby(((np.sum(thresh[x]) > 100, x) for x in range(thresh.shape[0])), key=lambda x:x[0]):
+       if not val: continue
+       elems = list(elems)
+       start, end = elems[0][1], elems[-1][1]
+       tmp = np.where(np.sum(thresh[start:end], axis=0) > 100)[0]
+       mean = round(sum(np.sum(thresh[i]) * i for i in range(start, end)) / np.sum(thresh[start:end]))
+       cv2.line(img, (tmp[0], mean), (tmp[-1], mean), (0, 0, 255), (end - start) // 10 + 1)
+   
+   cv2.imwrite("./delete-text.png", img)
+   ```
+   程序读取的原图如下：
+   ![](./text.png)
+   运行程序得到的输出结果如下：
+   ![](./delete-text.png)
