@@ -23,12 +23,30 @@
    $$   
    
 2. 证明：
-   记该本征矩阵为 $E$。
-   **先证 $E$ 的奇异值之一为 $0$：**
-   因为 $E$ 是奇异矩阵，所以 $EE^\top$ 不是满秩矩阵。
-   因此 $EE^\top$ 存在特征值 $0$，即 $E$ 存在一个奇异值为 $0$。
-   **再证 $E$ 的另外两个奇异值相等：**
-   即证 $EE^\top$ 的另外两个特征值相等。
-   因为 $EE^\top$ 可以相似对角化，所以 $EE^\top$ 有??????
-
+   记一本征矩阵为 $B$，有
+   $$
+   B = TR
+   $$
+   其中 $T$ 为 skew symmetrical matrix，$R$ 为旋转矩阵。
+   因此 $T$ 可以写成：
+   $$
+   T = Q'\begin{bmatrix}
+      0 & \phi & 0 \\
+      -\phi & 0 & 0 \\
+      0 & 0 & 0
+   \end{bmatrix} Q
+   $$
+   其中 $\phi$ 为常实数。
+   因此
+   $$
+   \begin{aligned}
+      B^\top B &= R^\top T^\top T R \\
+      &=\left(QR\right)^\top \begin{bmatrix}
+         \phi^2 & 0 & 0 \\
+         0 & \phi^2 & 0 \\
+         0 & 0 & 0
+      \end{bmatrix} \left(QR\right)
+   \end{aligned}
+   $$
+   因此 $B$ 的奇异值为 $0, \phi^2,\phi^2$，即一个奇异值为 $0$ 且其他两个相等。
 3. 
