@@ -69,7 +69,48 @@
    \end{aligned}
    $$
    因此 $E$ 的奇异值为 $0, \phi^2,\phi^2$，即一个奇异值为 $0$ 且其他两个相等。
-3. 参照 [opencv](https://github.com/opencv/opencv) 的源码，编写如下的 C++ 代码 (`StereoRectify.cpp`)：
+3. 下面进行实验。
+   使用的数据集来自 [Chessboard Pictures for Stereocamera Calibration](https://www.kaggle.com/datasets/danielwe14/stereocamera-chessboard-pictures)。我选择了其中的 15 号图片对（重命名为 `imgL.png` 和 `imgR.png`）。
+   数据集中给定的内外参数矩阵如下：
+   $$
+   \begin{aligned}
+    \text{Camera}_\text{left} &= \begin{bmatrix}
+    717.67713222 & 0. & 524.32800179\\
+     0. & 728.74457604 & 285.48227469\\
+      0. & 0. & 1.
+   \end{bmatrix}\\
+   \text{Camera}_\text{right} &= \begin{bmatrix}
+    721.88057791 & 0. & 513.97875605, \\
+     0. & 732.52238649 & 293.09503537, \\
+     0. & 0. & 1.
+   \end{bmatrix}\\
+   \text{distCoeffs}_\text{left} &= \begin{bmatrix}
+    0.03202285\\
+     -0.17513817\\
+     0.00090401\\
+     0.00048527\\
+     0.19902392
+   \end{bmatrix}\\
+   \text{distCoeffs}_\text{right} &= \begin{bmatrix}
+    0.00878113\\
+    -0.12596223\\
+    -0.00143747\\
+    0.00142956\\
+    0.18402501
+   \end{bmatrix}\\
+   \text{R} &= \begin{bmatrix}
+    0.99937181 & 0.00763664 & -0.03460732\\
+     -0.00856809 & 0.99960284 & -0.02684689\\ 
+     0.03438855 & 0.02712655 & 0.99904033
+   \end{bmatrix}\\
+   \text{T} &= \begin{bmatrix}
+    189.73626102\\
+    -4.52649875\\
+    4.79116498
+   \end{bmatrix}
+   \end{aligned}
+   $$
+   参照 [opencv](https://github.com/opencv/opencv) 的源码，编写如下的 C++ 代码 (`StereoRectify.cpp`)：
    ```cpp
     #include <opencv2/opencv.hpp>
     #include <opencv2/core/core_c.h>
@@ -348,8 +389,8 @@
         Mat cameraMatrixLeft = (Mat_<double>(3, 3) << 
 
         717.67713222, 0., 524.32800179, 
-        0., 728.74457604, 
-        285.48227469, 0., 0., 1.);
+        0., 728.74457604, 285.48227469, 
+        0., 0., 1.);
 
         Mat cameraMatrixRight = (Mat_<double>(3, 3) << 
         
@@ -404,7 +445,7 @@
         return 0;
     }
    ```
-   编译后的结果在 `dist` 文件夹中，运行命令
+   编译后的可执行文件及其依赖项在 `dist` 文件夹中，运行命令
    ```bash
    dist\StereoRectify.exe
    ```
