@@ -8,7 +8,7 @@ def getDirectRectifications(A1, A2, RT1, RT2, dims1, dims2):
     if np.all(np.equal(F/F[2,1], np.array([[0,0,0],[0,0,-1],[0,1,0]]))): w1 = w2 = np.array([0,0,1])
     else:
         bv = np.linalg.inv(RT2[:,:3]).dot(RT2[:,3]) - np.linalg.inv(RT1[:,:3]).dot(RT1[:,3])
-        B = ( bv.dot(bv) * np.eye(3) - bv[:,None].dot(bv[None,:]) ).dot(np.linalg.inv(A1.dot(RT1[:,:3])))
+        B = (bv.dot(bv) * np.eye(3) - bv[:,np.newaxis].dot(bv[np.newaxis,:])).dot(np.linalg.inv(A1.dot(RT1[:,:3])))
         L1 = np.transpose(np.linalg.inv(A1.dot(RT1[:,:3]))).dot(B)
         L2 = np.transpose(np.linalg.inv(A2.dot(RT2[:,:3]))).dot(B)
         P1 = (dims1[0]*dims1[1]/12)*np.array([[dims1[0]**2 - 1, 0, 0],[0, dims1[1]**2 - 1,0],[0, 0, 0]])
@@ -31,21 +31,15 @@ def getDirectRectifications(A1, A2, RT1, RT2, dims1, dims2):
                 3*(m[0]*m[2]*m[3] + m[1]*m[2]**2*m[3] + m[4]*m[6]*m[7] + m[5]*m[6]**2*m[7]),
                 3*m[0]*m[2]**2*m[3] + m[1]*m[2]**3*m[3] + 3*m[4]*m[6]**2*m[7] + m[5]*m[6]**3*m[7],
                 m[0]*m[2]**3*m[3] + m[4]*m[6]**3*m[7]]
-            beta = [(8*alpha[0]*alpha[2] - 3 * alpha[1]**2 ) / (8 * alpha[0]**2),
+            beta = [(8*alpha[0]*alpha[2] - 3 * alpha[1]**2) / (8 * alpha[0]**2),
                 12*alpha[0]*alpha[4] - 3*alpha[1]*alpha[3] + alpha[2]**2,
                 27*alpha[0]*alpha[3]**2 - 72*alpha[0]*alpha[2]*alpha[4] + 27*alpha[1]**2*alpha[4] - 9*alpha[1]*alpha[2]*alpha[3] + 2*alpha[2]**3]
-            D0 = np.power((1/2)*(beta[2]+(beta[2]**2 - 4*beta[1]**3) ** 0.5), 1/3)
-            Q = (1/2) * (-(2/3)*beta[0] + 1/(3*alpha[0]) * (D0 + beta[1] / D0)) ** 0.5
-            S = ( 8*alpha[0]**2*alpha[3] - 4*alpha[0]*alpha[1]*alpha[2] + alpha[1]**3 ) / ( 8*alpha[0]**3 )
-
-            sol = []
-            if -4*Q**2 - 2*beta[0] + S/Q >= 0:
-                sol.append( -alpha[1] / (4*alpha[0]) - Q - (1/2)*(-4*Q**2 - 2*beta[0] + S/Q) ** 0.5)
-                sol.append( -alpha[1] / (4*alpha[0]) - Q + (1/2)*(-4*Q**2 - 2*beta[0] + S/Q) ** 0.5)
-
-            if -4*Q**2 - 2*beta[0] - S/Q >= 0:
-                sol.append( -alpha[1] / (4*alpha[0]) + Q - (1/2)*(-4*Q**2 - 2*beta[0] - S/Q) ** 0.5)
-                sol.append( -alpha[1] / (4*alpha[0]) + Q + (1/2)*(-4*Q**2 - 2*beta[0] - S/Q) ** 0.5)
+            Q = (1/2) * (-(2/3)*beta[0] + 1/(3*alpha[0]) * ((D0 := np.power((1/2)*(beta[2]+(beta[2]**2 - 4*beta[1]**3) ** 0.5), 1/3)) + beta[1] / D0)) ** 0.5
+            S = (8*alpha[0]**2*alpha[3] - 4*alpha[0]*alpha[1]*alpha[2] + alpha[1]**3) / (8*alpha[0]**3)
+            sol = ([-alpha[1] / (4*alpha[0]) - Q - (1/2)*(-4*Q**2 - 2*beta[0] + S/Q) ** 0.5,
+                 -alpha[1] / (4*alpha[0]) - Q + (1/2)*(-4*Q**2 - 2*beta[0] + S/Q) ** 0.5] if -4*Q**2 - 2*beta[0] + S/Q >= 0 else []) + (
+                [-alpha[1] / (4*alpha[0]) + Q - (1/2)*(-4*Q**2 - 2*beta[0] - S/Q) ** 0.5,
+                 -alpha[1] / (4*alpha[0]) + Q + (1/2)*(-4*Q**2 - 2*beta[0] - S/Q) ** 0.5] if -4*Q**2 - 2*beta[0] - S/Q >= 0 else [])
         w1, w2 = ((tmpfunc := lambda ss: (((tmp := (Rnew := np.array([
             (xv := bv / np.linalg.norm(bv)),
             (yv := (yv := np.cross(
