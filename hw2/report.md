@@ -3,36 +3,39 @@
    根据上图中标出的相似三角形关系，列出以下的方程：
    $$
    \begin{cases}
-    &\frac{10 - 0}{0 - x_1'} = \frac{10 - 4}{4 - 0}\\
-    &\frac{20 - 0}{0 - y_1'} = \frac{10 - 4}{4 - 0}\\
-    &\frac{10 - (-5)}{(-5) - x_2'} = \frac{10 - 4}{4 - 0}\\
-    &\frac{20 - 0}{0 - y_2'} = \frac{10 - 4}{4 - 0}
+    &\frac{10 - 0}{0 - x_1} = \frac{10 - 4}{4 - 0}\\
+    &\frac{20 - 0}{0 - y_1} = \frac{10 - 4}{4 - 0}\\
+    &\frac{10 - (-5)}{(-5) - x_2} = \frac{10 - 4}{4 - 0}\\
+    &\frac{20 - 0}{0 - y_2} = \frac{10 - 4}{4 - 0}
    \end{cases}
    $$
    解上述方程得到以下解：
    $$
    \begin{cases}
-    &x_1' = -\frac{20}{3}\\
-    &y_1' = -\frac{40}{3}\\
-    &x_2' = -15\\
-    &y_2' = -\frac{40}{3}
+    &x_1 = -\frac{20}{3}\\
+    &y_1 = -\frac{40}{3}\\
+    &x_2 = -15\\
+    &y_2 = -\frac{40}{3}
    \end{cases}
    $$
-   求两个投影点在各自相片坐标系中的坐标如下：
+   求两个投影点在各自相片坐标系中的坐标如下，假设左右 scale factor 分别为 $f_1, f_2$：
    $$
    \begin{aligned}
-    \left(x_1, y_1\right) &= \left(x_1', y_1'\right) = \left(-\frac{20}{3}, -\frac{40}{3}\right)\\
-   \left(x_2, y_2\right) &= \left(x_2' + 5, y_2'\right) = \left(-10, -\frac{40}{3}\right)
+    \left(x_1', y_1'\right) &= f_1\left(x_1, y_1\right) = \left(-\frac{20}{3}f_1, -\frac{40}{3}f_1\right)\\
+   \left(x_2', y_2'\right) &= f_2\left(x_2 + 5, y_2\right) = \left(-10f_2, -\frac{40}{3}f_2\right)
    \end{aligned}
    $$
    计算视差如下：
    $$
    \begin{aligned}
-    x_d &= \left|x_1 - x_2\right|\\
-    &= \left|-\frac{20}{3} - \left(-10\right)\right|\\
-    &= \frac{10}{3}\\
+    x_d &= \left|x_1' - x_2'\right|\\
+    &= \left|-\frac{20}{3}f_1 + 10f_2\right|\\
    \end{aligned}
-   $$   
+   $$
+   当 $f_1=f_2=1$ 时，有
+   $$
+   d = \frac{10}{3}
+   $$
    
 2. 证明：
    记一本征矩阵为 $E$，则 $E$ 的定义为
