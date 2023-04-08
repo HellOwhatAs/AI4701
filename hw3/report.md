@@ -95,7 +95,7 @@
    - 初始点选取策略：算法的初始点选取策略会影响算法的收敛速度和分割结果的准确性。如果初始点选择不合理，可能导致均值漂移过程过程过长或者过短，导致分割结果不准确。
    - 图像大小和分辨率：图像大小和分辨率决定了算法的计算复杂度。如果图像过大或者分辨率过高，可能导致算法计算时间过长，难以实时处理。
 
-4. 编写如下的 [python](https://www.python.org/) 代码，对霍夫变换的参数 `rho`，`theta`，`threshold` 进行遍历，将全部结果图片保存在 `./HoughResult` 文件夹中。并将每张结果图片对应的线条的数目记录在 `./HoughResult/index.json` 文件中。
+4. 编写如下的 [python](https://www.python.org/) 代码（`./Hough.py`），对霍夫变换的参数 `rho`，`theta`，`threshold` 进行遍历，将全部结果图片保存在 `./HoughResult` 文件夹中。并将每张结果图片对应的线条的数目记录在 `./HoughResult/index.json` 文件中。
    （实际的参数 `theta` 是结果图片的文件名中的 `_theta` 进行 `_theta * np.pi / 180` 计算后的值。）
    ```py
    import cv2, numpy as np, os, json
@@ -136,7 +136,9 @@
        with open(os.path.join(result_path, "index.json"), "w", encoding="utf-8") as f:
            json.dump(data_idx, f, indent=4, ensure_ascii=False)
    ```
-   程序读取的原图如下：
+   程序读取的原图（`./lines.png`）如下：
+   > 图片来源：http://reference.wolfram.com/language/ref/ImageLines.html
+   
    ![](./lines.png)
    考虑到结果图片过多（在`./HoughResult` 文件夹中有 100 张结果图片），在报告中仅挑选其中有代表性的图片及其参数进行分析。
    首先对参数 `threshold` 进行分析，固定 `rho` = 1, `theta` = $\frac{\pi}{180}$，对 `threshold` 进行遍历，结果如下表：
@@ -166,7 +168,7 @@
    |`"rho=5;_theta=1;threshold=210.jpg"`| 696|![](./HoughResult/rho=5;_theta=1;threshold=210.jpg)|
    根据上述结果可以进行分析：`rho` 和 `theta` 的步长参数会影响霍夫变换空间的分辨率。步长越小，分辨率越高，但计算量也会增加。如果步长过大，可能会导致检测不到细微的直线，步长过小，则可能会检测到过多的噪声。
 
-5. 编写如下的 [python](https://www.python.org/) 代码，读取图像，进行线拟合。考虑到原始图像中文字行的方向都是水平的，因此在进行线拟合的过程中只进行每条直线的偏置项的拟合即可。最后根据拟合结果在原始图像上添加删除线，保存为另一幅图片。
+5. 编写如下的 [python](https://www.python.org/) 代码（`./delete_line.py`），读取图像（`./text.png`），进行线拟合。考虑到原始图像中文字行的方向都是水平的，因此在进行线拟合的过程中只进行每条直线的偏置项的拟合即可。最后根据拟合结果在原始图像上添加删除线，保存为另一幅图片（`./delete-text.png`）。
    ```py
    import cv2
    import numpy as np
