@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
+from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 
 sam_checkpoint = "./../../segmentanything/Scripts/sam_vit_h_4b8939.pth"
 model_type = "vit_h"
@@ -11,9 +11,7 @@ sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
 sam.to(device=device)
 mask_generator = SamAutomaticMaskGenerator(sam)
 
-def func(path: str):
-    image0 = cv2.imread(path)
-    image = cv2.resize(image0, (0,0), fx=0.5, fy=0.5)
+def segment(image: np.ndarray):
     masks = mask_generator.generate(image)
     max_img, max_val, max_idx, max_part, max_mask = None, 0, None, None, None
     for idx, ann in enumerate(sorted(masks, key=(lambda x: x['area']), reverse=True)):
@@ -33,8 +31,33 @@ def func(path: str):
             max_idx = idx
             max_part = part
             max_mask = ann['segmentation']
-    print(max_val, max_idx, max_part)
-    plt.imshow(max_img)
+    return max_mask
 
-func('./resources/images/difficult/3-2.jpg')
-plt.show()
+
+def findVertex(mask: np.ndarray):
+    thresh = mask.astype(np.uint8) * 255
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    epsilon = 0.03 * cv2.arcLength(contours[0], True)
+    approx = cv2.approxPolyDP(cv2.convexHull(contours[0]), epsilon, True)
+    assert len(approx) == 4
+    return approx
+
+if __name__ == '__main__':
+    for impath in (
+        './resources/images/easy/1-1.jpg',
+        './resources/images/easy/1-2.jpg',
+        './resources/images/easy/1-3.jpg',
+        './resources/images/medium/2-1.jpg',
+        './resources/images/medium/2-2.jpg',
+        './resources/images/medium/2-3.jpg',
+        './resources/images/difficult/3-1.jpg',
+        './resources/images/difficult/3-2.jpg',
+        './resources/images/difficult/3-3.jpg'
+    ):
+        image0 = cv2.imread(impath)
+        image = cv2.resize(image0, (0,0), fx=0.5, fy=0.5)
+        mask = segment(image)
+        im = image.copy()
+        cv2.drawContours(im, [findVertex(mask)], -1, (255, 0, 0), 2)
+        print(impath[impath.rfind('/') + 1:])
+        cv2.imwrite(impath[impath.rfind('/') + 1:], im)
