@@ -12,6 +12,9 @@ sam.to(device=device)
 mask_generator = SamAutomaticMaskGenerator(sam)
 
 def findVertex(mask: np.ndarray, max_iter = 20):
+    """
+    返回车牌区域 mask 的四个顶点
+    """
     thresh = mask.astype(np.uint8) * 255
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     factor = 0.01
@@ -24,6 +27,9 @@ def findVertex(mask: np.ndarray, max_iter = 20):
     raise Exception("beyound max_iter")
 
 def segment(image: np.ndarray):
+    """
+    返回 image 中车牌区域的 mask
+    """
     masks = mask_generator.generate(image)
     max_img, max_val, max_idx, max_part, max_mask = None, 0, None, None, None
     for idx, ann in enumerate(sorted(masks, key=(lambda x: x['area']), reverse=True)):
@@ -48,6 +54,16 @@ def segment(image: np.ndarray):
             max_mask = ann['segmentation']
     return max_mask
 
+def sort_points(points: list):
+    """
+    对四边形的四个顶点按照（左上、右上、右下、左下）的顺序进行排序
+    """
+    tmp = sorted(points)
+    left, right = tmp[:2], tmp[2:]
+    left.sort(key=lambda x:x[1])
+    right.sort(key=lambda x:x[1])
+    return [left[0], right[0], right[1], left[1]]
+
 if __name__ == '__main__':
     for impath in (
         './resources/images/easy/1-1.jpg',
@@ -63,7 +79,16 @@ if __name__ == '__main__':
         image0 = cv2.imread(impath)
         image = cv2.resize(image0, (0,0), fx=0.5, fy=0.5)
         mask = segment(image)
-        im = image.copy()
-        cv2.drawContours(im, [findVertex(mask)], -1, (255, 0, 0), 2)
+
+        vertexs = findVertex(mask) * 2
+        # cv2.drawContours(im, [findVertex(mask)], -1, (255, 0, 0), 2)
+        # plt.imshow(im)
+
+        width, height = 1280, 300 # 车牌号的形状
+        pts1 = np.array(sort_points(np.squeeze(vertexs).astype(np.float32).tolist()), dtype=np.float32)
+        pts2 = np.float32([[0, 0],[width,0],[width, height],[0,height]])
+        M = cv2.getPerspectiveTransform(pts1, pts2)
+        dst = cv2.warpPerspective(image0, M, (width, height))
+        
         print(impath[impath.rfind('/') + 1:])
-        cv2.imwrite(impath[impath.rfind('/') + 1:], im)
+        cv2.imwrite(impath[impath.rfind('/') + 1:], dst)
