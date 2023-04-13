@@ -13,6 +13,7 @@ mask_generator = SamAutomaticMaskGenerator(sam)
 
 blue_min, blue_max = np.array([105, 161, 108]), np.array([112, 255, 255])
 green_min, green_max = np.array([38, 30, 133]), np.array([100, 164, 218])
+width, height = 1280, 300 # 车牌号的形状
 
 def findVertex(mask: np.ndarray, max_iter = 20):
     """
@@ -67,21 +68,27 @@ def sort_points(points: list):
     right.sort(key=lambda x:x[1])
     return [left[0], right[0], right[1], left[1]]
 
-def locate_char(image_: np.ndarray):
+def getbinary(image: np.ndarray):
     """
-    返回 image 中非省份的全部字符区域 (x, y, w, h)
+    根据 (蓝/绿) 颜色，进行二值化
     """
-    image = image_[:, 100:]
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    blue_val = np.sum(cv2.inRange(image_hsv, np.array([105, 161, 108]), np.array([112, 255, 255])) != 0)
-    green_val = np.sum(cv2.inRange(image_hsv, np.array([38, 30, 133]), np.array([100, 164, 218])) != 0)
+    blue_val = np.sum(cv2.inRange(image_hsv, blue_min, blue_max) != 0)
+    green_val = np.sum(cv2.inRange(image_hsv, green_min, green_max) != 0)
     blocksize = min(image.shape[:2])
     if not blocksize & 1: blocksize -= 1
     if blue_val > green_val:
         binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blocksize, -30)
     else:
         binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, blocksize, 30)
+    return binary
+
+def locate_char(binary: np.ndarray):
+    """
+    返回 binary image 中非省份的全部字符区域 (x, y, w, h)
+    """
+    binary = binary[:, 100:]
     opend = cv2.morphologyEx(binary, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
     contours, hierarchy = cv2.findContours(opend, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     ret = []
@@ -90,6 +97,16 @@ def locate_char(image_: np.ndarray):
         if w > 100 and h > 150 and w < 200 and 20000 < w * h:
             ret.append((x + 100, y, w, h))
     return ret
+
+def locate_provi(chrs: list):
+    """
+    返回 根据其他字符区域 chrs [(x, y, w, h)] 确定的省份汉字区域 (x, y, w, h)
+    """
+    chrs.sort()
+    dx, dy, dw, dh = np.mean([np.array(chrs[i + 1]) - chrs[i] for i in range(len(chrs) - 1)][1:], dtype = int, axis=0)
+    c_x, c_y = chrs[0][0] - dx, chrs[0][1] - dy
+    c_w, c_h = chrs[0][2] - dw, chrs[0][3] - dh
+    return max(0, c_x), max(0, c_y), c_w, min(c_h, height - c_y)
 
 if __name__ == 'segment':
     for impath in (
@@ -111,7 +128,6 @@ if __name__ == 'segment':
         # cv2.drawContours(im, [findVertex(mask)], -1, (255, 0, 0), 2)
         # plt.imshow(im)
 
-        width, height = 1280, 300 # 车牌号的形状
         pts1 = np.array(sort_points(np.squeeze(vertexs).astype(np.float32).tolist()), dtype=np.float32)
         pts2 = np.float32([[0, 0],[width,0],[width, height],[0,height]])
         M = cv2.getPerspectiveTransform(pts1, pts2)
@@ -123,6 +139,13 @@ if __name__ == 'segment':
 if __name__ == '__main__':
     for impath in os.listdir('./tmp/'):
         dst = cv2.imread(os.path.join('tmp', impath))
-        for (x, y, w, h) in locate_char(dst):
-            cv2.rectangle(dst, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        cv2.imwrite(impath, dst)
+
+        dst_copy = dst.copy()
+        binary = getbinary(dst_copy)
+        chrs = []
+        for (x, y, w, h) in locate_char(binary):
+            cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            chrs.append((x, y, w, h))
+        x, y, w, h = locate_provi(chrs)
+        cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.imwrite(impath, dst_copy)
