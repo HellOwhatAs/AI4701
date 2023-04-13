@@ -91,4 +91,4 @@ if __name__ == '__main__':
         dst = cv2.warpPerspective(image0, M, (width, height))
         
         print(impath[impath.rfind('/') + 1:])
-        cv2.imwrite(impath[impath.rfind('/') + 1:], dst)
+        cv2.imwrite("./tmp/" +impath[impath.rfind('/') + 1:], dst)
