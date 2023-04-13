@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
+import cv2, os
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 
 sam_checkpoint = "./../../segmentanything/Scripts/sam_vit_h_4b8939.pth"
@@ -10,6 +10,9 @@ device = "cuda"
 sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
 sam.to(device=device)
 mask_generator = SamAutomaticMaskGenerator(sam)
+
+blue_min, blue_max = np.array([105, 161, 108]), np.array([112, 255, 255])
+green_min, green_max = np.array([38, 30, 133]), np.array([100, 164, 218])
 
 def findVertex(mask: np.ndarray, max_iter = 20):
     """
@@ -38,8 +41,8 @@ def segment(image: np.ndarray):
         mask_img = np.where(ann['segmentation'][:,:,None][:,:,(0,0,0)], image, 0)
         mask_hsv = cv2.cvtColor(mask_img, cv2.COLOR_BGR2HSV)
         val = max(
-            (np.sum(cv2.inRange(mask_hsv, np.array([105, 161, 108]), np.array([112, 255, 255])) != 0) / np.sum(ann['segmentation'] != 0)),
-            (np.sum(cv2.inRange(mask_hsv, np.array([38, 30, 133]), np.array([100, 164, 218])) != 0) / np.sum(ann['segmentation'] != 0))
+            (np.sum(cv2.inRange(mask_hsv, blue_min, blue_max) != 0) / np.sum(ann['segmentation'] != 0)),
+            (np.sum(cv2.inRange(mask_hsv, green_min, green_max) != 0) / np.sum(ann['segmentation'] != 0))
         )
         if val > 0.7: continue
 
@@ -64,7 +67,31 @@ def sort_points(points: list):
     right.sort(key=lambda x:x[1])
     return [left[0], right[0], right[1], left[1]]
 
-if __name__ == '__main__':
+def locate_char(image_: np.ndarray):
+    """
+    返回 image 中非省份的全部字符区域 (x, y, w, h)
+    """
+    image = image_[:, 100:]
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    blue_val = np.sum(cv2.inRange(image_hsv, np.array([105, 161, 108]), np.array([112, 255, 255])) != 0)
+    green_val = np.sum(cv2.inRange(image_hsv, np.array([38, 30, 133]), np.array([100, 164, 218])) != 0)
+    blocksize = min(image.shape[:2])
+    if not blocksize & 1: blocksize -= 1
+    if blue_val > green_val:
+        binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blocksize, -30)
+    else:
+        binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, blocksize, 30)
+    opend = cv2.morphologyEx(binary, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
+    contours, hierarchy = cv2.findContours(opend, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    ret = []
+    for c in contours:
+        (x, y, w, h) = cv2.boundingRect(c)
+        if w > 100 and h > 150 and w < 200 and 20000 < w * h:
+            ret.append((x + 100, y, w, h))
+    return ret
+
+if __name__ == 'segment':
     for impath in (
         './resources/images/easy/1-1.jpg',
         './resources/images/easy/1-2.jpg',
@@ -92,3 +119,10 @@ if __name__ == '__main__':
         
         print(impath[impath.rfind('/') + 1:])
         cv2.imwrite("./tmp/" +impath[impath.rfind('/') + 1:], dst)
+
+if __name__ == '__main__':
+    for impath in os.listdir('./tmp/'):
+        dst = cv2.imread(os.path.join('tmp', impath))
+        for (x, y, w, h) in locate_char(dst):
+            cv2.rectangle(dst, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.imwrite(impath, dst)
