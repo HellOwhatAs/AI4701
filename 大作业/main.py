@@ -145,9 +145,9 @@ if __name__ == 'getchr':
         chrs = []
         for idx, (x, y, w, h) in enumerate(locate_char(binary)):
             # cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.imwrite(f'tmp2/{idx + 1}+{impath}', dst_copy[y: y + h, x: x + w])
+            cv2.imwrite(f'tmp2/{idx + 1}+{impath}', binary[y: y + h, x: x + w])
             chrs.append((x, y, w, h))
         x, y, w, h = locate_provi(chrs)
         # cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        cv2.imwrite(f'tmp2/0+{impath}', dst_copy[y: y + h, x: x + w])
+        cv2.imwrite(f'tmp2/0+{impath}', binary[y: y + h, x: x + w])
         # cv2.imwrite(impath, dst_copy)
