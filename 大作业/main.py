@@ -106,7 +106,7 @@ def locate_provi(chrs: list):
     dx, dy, dw, dh = np.mean([np.array(chrs[i + 1]) - chrs[i] for i in range(len(chrs) - 1)][1:], dtype = int, axis=0)
     c_x, c_y = chrs[0][0] - dx, chrs[0][1] - dy
     c_w, c_h = chrs[0][2] - dw, chrs[0][3] - dh
-    return max(0, c_x), max(0, c_y), c_w, min(c_h, height - c_y)
+    return max(0, c_x - 10), max(0, c_y), c_w + 20, min(c_h, height - c_y)
 
 if __name__ == 'segment':
     for impath in (
@@ -136,7 +136,7 @@ if __name__ == 'segment':
         print(impath[impath.rfind('/') + 1:])
         cv2.imwrite("./tmp/" +impath[impath.rfind('/') + 1:], dst)
 
-if __name__ == 'getchr':
+if __name__ == '__main__':
     for impath in os.listdir('./tmp/'):
         dst = cv2.imread(os.path.join('tmp', impath))
 
