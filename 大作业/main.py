@@ -136,16 +136,18 @@ if __name__ == 'segment':
         print(impath[impath.rfind('/') + 1:])
         cv2.imwrite("./tmp/" +impath[impath.rfind('/') + 1:], dst)
 
-if __name__ == '__main__':
+if __name__ == 'getchr':
     for impath in os.listdir('./tmp/'):
         dst = cv2.imread(os.path.join('tmp', impath))
 
         dst_copy = dst.copy()
         binary = getbinary(dst_copy)
         chrs = []
-        for (x, y, w, h) in locate_char(binary):
-            cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        for idx, (x, y, w, h) in enumerate(locate_char(binary)):
+            # cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.imwrite(f'tmp2/{idx + 1}+{impath}', dst_copy[y: y + h, x: x + w])
             chrs.append((x, y, w, h))
         x, y, w, h = locate_provi(chrs)
-        cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        cv2.imwrite(impath, dst_copy)
+        # cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.imwrite(f'tmp2/0+{impath}', dst_copy[y: y + h, x: x + w])
+        # cv2.imwrite(impath, dst_copy)
