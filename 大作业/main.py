@@ -108,6 +108,15 @@ def locate_provi(chrs: list):
     c_w, c_h = chrs[0][2] - dw, chrs[0][3] - dh
     return max(0, c_x - 10), max(0, c_y), c_w + 20, min(c_h, height - c_y)
 
+def fill_rect(img: np.ndarray):
+    h, w = img.shape[:2]
+    padding = abs(h - w) // 2
+    tmp = 10
+    if h > w: img = cv2.copyMakeBorder(img, tmp, tmp, padding + tmp, padding + tmp, cv2.BORDER_CONSTANT,value=0)
+    else: img = cv2.copyMakeBorder(img, padding + tmp, padding + tmp, tmp, tmp, cv2.BORDER_CONSTANT,value=0)
+    return img
+
+
 if __name__ == 'segment':
     for impath in (
         './resources/images/easy/1-1.jpg',
@@ -145,9 +154,9 @@ if __name__ == '__main__':
         chrs = []
         for idx, (x, y, w, h) in enumerate(locate_char(binary)):
             # cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.imwrite(f'tmp2/{idx + 1}+{impath}', binary[y: y + h, x: x + w])
+            cv2.imwrite(f'tmp2/{idx + 1}+{impath}', fill_rect(binary[y: y + h, x: x + w]))
             chrs.append((x, y, w, h))
         x, y, w, h = locate_provi(chrs)
         # cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        cv2.imwrite(f'tmp2/0+{impath}', binary[y: y + h, x: x + w])
+        cv2.imwrite(f'tmp2/0+{impath}', fill_rect(binary[y: y + h, x: x + w]))
         # cv2.imwrite(impath, dst_copy)
