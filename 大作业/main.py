@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2, os
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 import cnn_chr_model, cnn_provi_model, torch
@@ -124,6 +123,61 @@ def fill_rect(img: np.ndarray):
     else: img = cv2.copyMakeBorder(img, padding + tmp, padding + tmp, tmp, tmp, cv2.BORDER_CONSTANT,value=0)
     return img
 
+def plate_recognition(image0: np.ndarray, show_intermediate = False):
+    image = cv2.resize(image0, (0,0), fx=0.5, fy=0.5)
+    mask = segment(image)
+
+    vertexs = findVertex(mask) * 2
+
+    if show_intermediate:
+        im = image.copy()
+        cv2.drawContours(im, [findVertex(mask)], -1, (0, 0, 255), 2)
+        cv2.imshow('car plate region', im)
+        cv2.waitKey(0)
+    
+    pts1 = np.array(sort_points(np.squeeze(vertexs).astype(np.float32).tolist()), dtype=np.float32)
+    pts2 = np.float32([[0, 0],[width,0],[width, height],[0,height]])
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+    dst = cv2.warpPerspective(image0, M, (width, height))
+    
+    if show_intermediate:
+        cv2.imshow('car plate', dst)
+        cv2.waitKey(0)
+
+        
+
+    dst_copy = dst.copy()
+    binary = getbinary(dst_copy)
+    chrs, chr_images = [], []
+    for idx, (x, y, w, h) in enumerate(locate_char(binary)):
+        chr_images.append(fill_rect(binary[y: y + h, x: x + w]))
+        
+        if show_intermediate:
+            cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        chrs.append((x, y, w, h))
+    
+    chr_images_input = torch.stack([cnn_chr_model.transform(Image.fromarray(im).convert('RGB')) for im in chr_images], dim=0)
+    output = net(chr_images_input.to(device))
+    _, predicted = torch.max(output, 1)
+
+    chr_result = [cnn_chr_model.int2chr[i.item()] for i in predicted]
+
+    x, y, w, h = locate_provi(chrs)
+    provi_img = fill_rect(binary[y: y + h, x: x + w])
+
+    if show_intermediate:
+        cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.imshow("all chars", dst_copy)
+        cv2.imshow("provi & chrs", cv2.hconcat([cv2.resize(provi_img, (150, 150))] + [cv2.resize(i, (150, 150)) for i in chr_images]))
+        cv2.waitKey(0)
+
+    provi_image_input = torch.stack([cnn_chr_model.transform(Image.fromarray(provi_img).convert('RGB'))], dim=0)
+    provi_output = provi_net(provi_image_input.to(device))
+    _, provi_predicted = torch.max(provi_output, 1)
+    provi_result = cnn_provi_model.provi2zh[cnn_provi_model.int2provi[provi_predicted.item()]]
+
+    return provi_result + chr_result[0] + ' ' + "".join(chr_result[1:])
 
 if __name__ == '__main__':
     for impath in (
@@ -137,39 +191,4 @@ if __name__ == '__main__':
         './resources/images/difficult/3-2.jpg',
         './resources/images/difficult/3-3.jpg'
     ):
-        image0 = cv2.imread(impath)
-        image = cv2.resize(image0, (0,0), fx=0.5, fy=0.5)
-        mask = segment(image)
-
-        vertexs = findVertex(mask) * 2
-        # cv2.drawContours(im, [findVertex(mask)], -1, (255, 0, 0), 2)
-        # plt.imshow(im)
-
-        pts1 = np.array(sort_points(np.squeeze(vertexs).astype(np.float32).tolist()), dtype=np.float32)
-        pts2 = np.float32([[0, 0],[width,0],[width, height],[0,height]])
-        M = cv2.getPerspectiveTransform(pts1, pts2)
-        dst = cv2.warpPerspective(image0, M, (width, height))
-        
-        # print(impath[impath.rfind('/') + 1:])
-
-        dst_copy = dst.copy()
-        binary = getbinary(dst_copy)
-        chrs, chr_images = [], []
-        for idx, (x, y, w, h) in enumerate(locate_char(binary)):
-            chr_images.append(fill_rect(binary[y: y + h, x: x + w]))
-            chrs.append((x, y, w, h))
-
-        chr_images_input = torch.stack([cnn_chr_model.transform(Image.fromarray(im).convert('RGB')) for im in chr_images], dim=0)
-        output = net(chr_images_input.to(device))
-        _, predicted = torch.max(output, 1)
-
-        chr_result = [cnn_chr_model.int2chr[i.item()] for i in predicted]
-
-        x, y, w, h = locate_provi(chrs)
-        provi_img = fill_rect(binary[y: y + h, x: x + w])
-        provi_image_input = torch.stack([cnn_chr_model.transform(Image.fromarray(provi_img).convert('RGB'))], dim=0)
-        provi_output = provi_net(provi_image_input.to(device))
-        _, provi_predicted = torch.max(provi_output, 1)
-        provi_result = cnn_provi_model.provi2zh[cnn_provi_model.int2provi[provi_predicted.item()]]
-
-        print(provi_result + chr_result[0] + ' ' + "".join(chr_result[1:]))
+        print(plate_recognition(cv2.imread(impath)))
