@@ -2,16 +2,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2, os
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
-import cnn_chr_model, torch
+import cnn_chr_model, cnn_provi_model, torch
 from PIL import Image
 
 sam_checkpoint = "./../../segmentanything/Scripts/sam_vit_h_4b8939.pth"
 model_type = "vit_h"
-device = "cuda"
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
 sam.to(device=device)
 mask_generator = SamAutomaticMaskGenerator(sam)
+
+net = cnn_chr_model.Net().to(device)
+net.load_state_dict(torch.load(cnn_chr_model.PATH))
+
+provi_net = cnn_provi_model.Net().to(device)
+provi_net.load_state_dict(torch.load(cnn_provi_model.PATH))
 
 blue_min, blue_max = np.array([105, 161, 108]), np.array([112, 255, 255])
 green_min, green_max = np.array([38, 30, 133]), np.array([100, 164, 218])
@@ -119,7 +125,7 @@ def fill_rect(img: np.ndarray):
     return img
 
 
-if __name__ == 'segment':
+if __name__ == '__main__':
     for impath in (
         './resources/images/easy/1-1.jpg',
         './resources/images/easy/1-2.jpg',
@@ -144,17 +150,7 @@ if __name__ == 'segment':
         M = cv2.getPerspectiveTransform(pts1, pts2)
         dst = cv2.warpPerspective(image0, M, (width, height))
         
-        print(impath[impath.rfind('/') + 1:])
-        cv2.imwrite("./tmp/" +impath[impath.rfind('/') + 1:], dst)
-
-if __name__ == '__main__':
-    
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    net = cnn_chr_model.Net().to(device)
-    net.load_state_dict(torch.load(cnn_chr_model.PATH))
-
-    for impath in os.listdir('./tmp/'):
-        dst = cv2.imread(os.path.join('tmp', impath))
+        # print(impath[impath.rfind('/') + 1:])
 
         dst_copy = dst.copy()
         binary = getbinary(dst_copy)
@@ -166,6 +162,14 @@ if __name__ == '__main__':
         chr_images_input = torch.stack([cnn_chr_model.transform(Image.fromarray(im).convert('RGB')) for im in chr_images], dim=0)
         output = net(chr_images_input.to(device))
         _, predicted = torch.max(output, 1)
-        print([cnn_chr_model.int2chr[i.item()] for i in predicted])
+
+        chr_result = [cnn_chr_model.int2chr[i.item()] for i in predicted]
+
         x, y, w, h = locate_provi(chrs)
-        # cv2.imwrite(f'tmp2/0+{impath}', fill_rect(binary[y: y + h, x: x + w]))
+        provi_img = fill_rect(binary[y: y + h, x: x + w])
+        provi_image_input = torch.stack([cnn_chr_model.transform(Image.fromarray(provi_img).convert('RGB'))], dim=0)
+        provi_output = provi_net(provi_image_input.to(device))
+        _, provi_predicted = torch.max(provi_output, 1)
+        provi_result = cnn_provi_model.provi2zh[cnn_provi_model.int2provi[provi_predicted.item()]]
+
+        print(provi_result + chr_result[0] + ' ' + "".join(chr_result[1:]))
