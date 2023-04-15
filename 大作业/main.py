@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2, os
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
+import cnn_chr_model, torch
+from PIL import Image
 
 sam_checkpoint = "./../../segmentanything/Scripts/sam_vit_h_4b8939.pth"
 model_type = "vit_h"
@@ -96,7 +98,7 @@ def locate_char(binary: np.ndarray):
         (x, y, w, h) = cv2.boundingRect(c)
         if w > 100 and h > 150 and w < 200 and 20000 < w * h:
             ret.append((x + 100, y, w, h))
-    return ret
+    return sorted(ret)
 
 def locate_provi(chrs: list):
     """
@@ -146,17 +148,24 @@ if __name__ == 'segment':
         cv2.imwrite("./tmp/" +impath[impath.rfind('/') + 1:], dst)
 
 if __name__ == '__main__':
+    
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    net = cnn_chr_model.Net().to(device)
+    net.load_state_dict(torch.load(cnn_chr_model.PATH))
+
     for impath in os.listdir('./tmp/'):
         dst = cv2.imread(os.path.join('tmp', impath))
 
         dst_copy = dst.copy()
         binary = getbinary(dst_copy)
-        chrs = []
+        chrs, chr_images = [], []
         for idx, (x, y, w, h) in enumerate(locate_char(binary)):
-            # cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.imwrite(f'tmp2/{idx + 1}+{impath}', fill_rect(binary[y: y + h, x: x + w]))
+            chr_images.append(fill_rect(binary[y: y + h, x: x + w]))
             chrs.append((x, y, w, h))
+
+        chr_images_input = torch.stack([cnn_chr_model.transform(Image.fromarray(im).convert('RGB')) for im in chr_images], dim=0)
+        output = net(chr_images_input.to(device))
+        _, predicted = torch.max(output, 1)
+        print([cnn_chr_model.int2chr[i.item()] for i in predicted])
         x, y, w, h = locate_provi(chrs)
-        # cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        cv2.imwrite(f'tmp2/0+{impath}', fill_rect(binary[y: y + h, x: x + w]))
-        # cv2.imwrite(impath, dst_copy)
+        # cv2.imwrite(f'tmp2/0+{impath}', fill_rect(binary[y: y + h, x: x + w]))
