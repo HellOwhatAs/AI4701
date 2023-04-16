@@ -34,4 +34,4 @@ demo = gr.Interface(
     ],
     title = '计算机视觉期末课程大作业'
 )
-demo.launch(share=True)
+demo.launch(inbrowser=True)

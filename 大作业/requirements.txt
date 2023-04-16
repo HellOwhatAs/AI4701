@@ -1,7 +1,5 @@
 gradio
 opencv-python
-torch
-torchvision
 Pillow
 git+https://github.com/facebookresearch/segment-anything.git
 pycocotools
