@@ -10,9 +10,9 @@ pip install -r requirements.txt
 ```
 
 ## 模型文件下载
-下载 **[segment-anything](https://github.com/facebookresearch/segment-anything)** 提供的 `sam_vit_h_4b8939.pth` 模型文件
-**下载链接：** https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
-（约 2.4G 大小）
+下载 **[segment-anything](https://github.com/facebookresearch/segment-anything)** 提供的 `sam_vit_h_4b8939.pth` 模型文件  
+**下载链接：** https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth  
+（约 2.4G 大小）  
 放置于根目录下（即与 `main.py` 同目录）
 
 ## 训练数据集来源
