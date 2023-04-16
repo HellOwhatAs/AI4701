@@ -1,7 +1,7 @@
 # 车牌号的视觉识别
 
 ## 环境配置
-要求 `python>=3.8`，`pytorch>=1.7` 且 `torchvision>=0.8`. 请根据 [这里](https://pytorch.org/get-started/locally/) 安装 PyTorch 和 TorchVision 依赖项。 强烈建议安装 CUDA 版本的 PyTorch 和 TorchVision。
+要求 `python>=3.8`，`pytorch>=1.7` 且 `torchvision>=0.8`. 请根据 [这里](https://pytorch.org/get-started/locally/) 安装 PyTorch 和 TorchVision 依赖项。 强烈建议安装 CUDA 版本的 PyTorch 和 TorchVision。  
 要求 [`git`](https://git-scm.com/) 可用。
 
 满足上述要求后，安装依赖项：
@@ -44,12 +44,12 @@ pip install -r requirements.txt
    python cnn_provi_model.py
    ```
    得到 `provi_net.pth` 模型文件 **（本项目已提供）**
-3. 对课程作业提供的 9 张车牌图片进行预测：
+3. 对课程作业提供的 9 张车牌图片进行预测：  
    要求（`./provi_net.pth`, `./chr_net.pth`, `./sam_vit_h_4b8939.pth`）可用
    ```bash
    python main.py
    ```
-4. 运行 WebUI
+4. 运行 WebUI  
    要求（`./provi_net.pth`, `./chr_net.pth`, `./sam_vit_h_4b8939.pth`）可用
    ```bash
    python app.py
