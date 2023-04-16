@@ -4,7 +4,7 @@ from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 import cnn_chr_model, cnn_provi_model, torch
 from PIL import Image
 
-sam_checkpoint = "./../../segmentanything/Scripts/sam_vit_h_4b8939.pth"
+sam_checkpoint = "./sam_vit_h_4b8939.pth"
 model_type = "vit_h"
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
