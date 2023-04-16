@@ -124,6 +124,8 @@ def fill_rect(img: np.ndarray):
     return img
 
 def plate_recognition(image0: np.ndarray, show_intermediate = False):
+    scale = 2000 / image0.shape[1]
+    image0 = cv2.resize(image0, (0, 0), fx = scale, fy = scale)
     image = cv2.resize(image0, (0,0), fx=0.5, fy=0.5)
     mask = segment(image)
 
@@ -132,8 +134,7 @@ def plate_recognition(image0: np.ndarray, show_intermediate = False):
     if show_intermediate:
         im = image.copy()
         cv2.drawContours(im, [findVertex(mask)], -1, (0, 0, 255), 2)
-        cv2.imshow('car plate region', im)
-        cv2.waitKey(0)
+        yield cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     
     pts1 = np.array(sort_points(np.squeeze(vertexs).astype(np.float32).tolist()), dtype=np.float32)
     pts2 = np.float32([[0, 0],[width,0],[width, height],[0,height]])
@@ -141,8 +142,7 @@ def plate_recognition(image0: np.ndarray, show_intermediate = False):
     dst = cv2.warpPerspective(image0, M, (width, height))
     
     if show_intermediate:
-        cv2.imshow('car plate', dst)
-        cv2.waitKey(0)
+        yield cv2.cvtColor(dst, cv2.COLOR_BGR2RGB)
 
         
 
@@ -168,16 +168,22 @@ def plate_recognition(image0: np.ndarray, show_intermediate = False):
 
     if show_intermediate:
         cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        cv2.imshow("all chars", dst_copy)
-        cv2.imshow("provi & chrs", cv2.hconcat([cv2.resize(provi_img, (150, 150))] + [cv2.resize(i, (150, 150)) for i in chr_images]))
-        cv2.waitKey(0)
+        yield cv2.cvtColor(dst_copy, cv2.COLOR_BGR2RGB)
+        yield provi_img
+        for i in chr_images:
+            yield i
 
     provi_image_input = torch.stack([cnn_chr_model.transform(Image.fromarray(provi_img).convert('RGB'))], dim=0)
     provi_output = provi_net(provi_image_input.to(device))
     _, provi_predicted = torch.max(provi_output, 1)
     provi_result = cnn_provi_model.provi2zh[cnn_provi_model.int2provi[provi_predicted.item()]]
 
-    return provi_result + chr_result[0] + ' ' + "".join(chr_result[1:])
+    ret = provi_result + chr_result[0] + ' ' + "".join(chr_result[1:])
+    yield ret
+
+def result_only(image: np.ndarray):
+    try: return list(plate_recognition(image))[0]
+    except: return '识别失败了！'
 
 if __name__ == '__main__':
     for impath in (
@@ -191,4 +197,4 @@ if __name__ == '__main__':
         './resources/images/difficult/3-2.jpg',
         './resources/images/difficult/3-3.jpg'
     ):
-        print(plate_recognition(cv2.imread(impath)))
+        print(result_only(cv2.imread(impath)))
