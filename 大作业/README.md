@@ -15,12 +15,11 @@ pip install -r requirements.txt
 （约 2.4G 大小）  
 放置于根目录下（即与 `main.py` 同目录）
 
-## 训练数据集来源
+## 训练数据集准备
 > 1. 车牌字符数据集 - 飞桨AI Studio https://aistudio.baidu.com/aistudio/datasetdetail/18414
 > 2. 车牌识别数据集 - 飞桨AI Studio https://aistudio.baidu.com/aistudio/datasetdetail/56280
-> 3. 参照 https://github.com/derek285/generateCarPlate 项目，自己生成了部分数据集
 
-将全部数据集放置在 `./data` 文件夹中，呈以下结构：
+将以上两个数据集放置在 `./data` 文件夹中，呈以下结构：
 ```text
 ├─data
    ├─0
@@ -31,6 +30,13 @@ pip install -r requirements.txt
    ├─Z
    ├─zang
    └─zhe
+```
+> 3. 参照 https://github.com/derek285/generateCarPlate 项目，自己生成了部分数据集
+
+在准备好 `./data` 文件夹中的数据集后，运行以下命令，在 `./data/6` 文件夹中生成补充训练数据  
+（针对新能源汽车车牌的数字 "6" 的字体与普通蓝色车牌不同的问题）
+```bash
+python new_energy_6.py
 ```
 
 ## 快速开始
