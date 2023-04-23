@@ -132,6 +132,7 @@ def plate_recognition(image0: np.ndarray, show_intermediate = False):
     vertexs = findVertex(mask) * 2
 
     if show_intermediate:
+        yield mask.astype(np.uint8) * 255
         im = image.copy()
         cv2.drawContours(im, [findVertex(mask)], -1, (0, 0, 255), 2)
         yield cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
@@ -148,12 +149,17 @@ def plate_recognition(image0: np.ndarray, show_intermediate = False):
 
     dst_copy = dst.copy()
     binary = getbinary(dst_copy)
+    binary_copy = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
+    
+    if show_intermediate:
+        yield binary
+    
     chrs, chr_images = [], []
     for idx, (x, y, w, h) in enumerate(locate_char(binary)):
         chr_images.append(fill_rect(binary[y: y + h, x: x + w]))
         
         if show_intermediate:
-            cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.rectangle(binary_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         chrs.append((x, y, w, h))
     
@@ -167,8 +173,8 @@ def plate_recognition(image0: np.ndarray, show_intermediate = False):
     provi_img = fill_rect(binary[y: y + h, x: x + w])
 
     if show_intermediate:
-        cv2.rectangle(dst_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        yield cv2.cvtColor(dst_copy, cv2.COLOR_BGR2RGB)
+        cv2.rectangle(binary_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        yield cv2.cvtColor(binary_copy, cv2.COLOR_BGR2RGB)
         yield provi_img
         for i in chr_images:
             yield i
